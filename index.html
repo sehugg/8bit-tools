@@ -1,0 +1,126 @@
+<html> 
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+<script src="http://www.skulpt.org/js/skulpt.min.js" type="text/javascript"></script> 
+<script src="http://www.skulpt.org/js/skulpt-stdlib.js" type="text/javascript"></script> 
+
+<script src="../jquery/jquery-3.4.1.min.js"></script>
+<link rel="stylesheet" href="../bootstrap/css/bootstrap.min.css">
+<script src="../bootstrap/js/bootstrap.min.js"></script>
+    
+</head> 
+
+<ul class="nav nav-tabs">
+  <li role="presentation" class="active"><a href="#midinotes">MIDI Notes</a></li>
+  <li role="presentation"><a href="#">Profile</a></li>
+  <li role="presentation"><a href="#">Messages</a></li>
+</ul>
+
+<script type="text/javascript"> 
+// output functions are configurable.  This one just appends some text
+// to a pre element.
+function outf(text) { 
+    var mypre = document.getElementById("output"); 
+    mypre.innerHTML = mypre.innerHTML + text; 
+} 
+function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+            throw "File not found: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+}
+
+// Here's everything you need to run a python program in skulpt
+// grab the code from your textarea
+// get a reference to your pre element for output
+// configure the output function
+// call Sk.importMainWithBody()
+function runit() { 
+   var prog = document.getElementById("yourcode").value; 
+   var mypre = document.getElementById("output"); 
+   mypre.innerHTML = ''; 
+   Sk.pre = "output";
+   Sk.configure({output:outf, read:builtinRead}); 
+   var myPromise = Sk.misceval.asyncToPromise(function() {
+       return Sk.importMainWithBody("<stdin>", false, prog, true);
+   });
+   myPromise.then(function(mod) {
+       console.log('success');
+   },
+       function(err) {
+       console.log(err+"");
+   });
+} 
+</script> 
+
+
+<div class="container-fluid">
+
+      <div class="page-header">
+        <h3>MIDI Notes</h3>
+        <p class="lead">
+  Find the best base frequency for a range of notes, and generate
+  a table of divisors for the PSG.
+        </p>
+      </div>
+  <div class="row">
+    <div class="col-md-6">
+<textarea id="yourcode" cols="80" rows="20">
+
+import math
+
+test_notes = 49
+final_notes = 64
+
+basehz = 3579545/32.0
+
+results = []
+
+for a440 in range(4300,4500):
+    error = 0
+    for note in range(1,test_notes):
+        notehz = a440 / 10.0 * math.pow(2.0, (note - 49) / 12.0);
+        period = int(round(basehz / notehz))
+        tonehz = basehz / period
+        error += abs(notehz-tonehz)
+        #print a440,note,notehz,notehz-tonehz,period
+        #if a440 == 4405:
+        #  print '%d,%f,%d' % (note,tonehz-notehz,period)
+    results.append((error, a440))
+
+results.sort()
+best_error, best_a440 = results[0]
+best_a440 /= 10.0
+print '//', best_a440, best_error, test_notes
+
+print "const int note_table[%d] = {" % final_notes
+for note in range(0,final_notes):
+    notehz = best_a440 * math.pow(2.0, (note - 49) / 12.0);
+    period = int(round(basehz / notehz))
+    print '%d,' % period,
+print "};"
+
+</textarea>
+    </div>
+    <div class="col-md-6">
+<form> 
+<button onclick="runit()" type="button" class="btn btn-default btn-lg">
+  <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Run
+</button>
+<button onclick="copyit()" type="button" class="btn btn-lg">
+  <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> Copy to Clipboard
+</button>
+
+</form> 
+<textarea cols=80 rows=15 id="output" ></textarea>
+    </div>
+  </div>
+
+</div>
+
+</body> 
+
+</html> 
