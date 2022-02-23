@@ -12,6 +12,7 @@ parser.add_argument('-t', '--tempo', type=int, default=48, help="tempo")
 parser.add_argument('-o', '--one', action="store_true", help="one voice per channel")
 parser.add_argument('-z', '--compress', action="store_true", help="compress song (experimental)")
 parser.add_argument('-H', '--hex', action="store_true", help="hex output")
+parser.add_argument('-A', '--asm', action="store_true", help="asm output")
 parser.add_argument('midifile', help="MIDI file")
 parser.add_argument('midichannels', nargs='?', help="comma-separated list of MIDI channels, or -")
 args = parser.parse_args()
@@ -24,6 +25,7 @@ tempo = args.tempo
 compress = args.compress
 transpose = args.transpose
 coutput = not args.hex
+asmoutput = args.asm
 
 # for 2600
 #max_voices = 2
@@ -111,7 +113,7 @@ def channels_for_track(track):
     return list(channels)
 
 if not args.midichannels:
-    print(mid)
+    #print(mid)
     print((mid.length, 'seconds'))
     for i, track in enumerate(mid.tracks):
         print(('Track {}: {} ({}) {}'.format(i, track.name, len(track), channels_for_track(track))))
@@ -125,7 +127,7 @@ else:
     curchans = 0
     channels = [int(x) for x in args.midichannels.split(',')]
     print ('')
-    print(("// %s %s" % (mid, channels)))
+    #print(("// %s %s" % (mid, channels)))
     output = []
     for msg in mid:
         gtime += msg.time * tempo
@@ -149,7 +151,9 @@ else:
                         nvoices += 1
                         curchans |= 1<<msg.channel
     output.append(0xff)
-    if coutput:
+    if asmoutput:
+        print((','.join(['$'+hex1(x) for x in output])))
+    elif coutput:
         print((','.join([hex2(x) for x in output])))
     else:
         bighex = ''.join([hex1(x) for x in output])
