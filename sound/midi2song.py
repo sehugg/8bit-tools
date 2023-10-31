@@ -55,12 +55,13 @@ def note2drum(n):
         return 0x42 # snare
     if n in [43,45,47,48]:
         return 0x43 # tom
-    if n in [46,49,52,53,55,57]:
+    if n in [46,49,51,52,53,55,57]:
         return 0x44 # crash
     if n in [60,65,57,56,76]:
         return 0x45 # hi cowbell
     if n in [61,66,68,77]:
         return 0x46 # lo cowbell
+    print(n)
     return -1
 
 if not args.midichannels:
@@ -87,13 +88,9 @@ else:
             vel = msg.velocity
             t = int(math.ceil(gtime))
             if vel > 0:
-                while curtime < t:
-                    dt = min(63, t-curtime)
-                    curtime += dt
-                    if nnotes > 0:
-                        nvoices = 0
-                        curchans = 0
-                        output.append(dt+128)
+                if t > curtime:
+                    nvoices = 0
+                    curchans = 0
                 if note >= min_note and note <= max_note and nvoices < max_voices:
                     if not (one_voice_per_channel and (curchans & (1<<msg.channel))):
                         if msg.channel == drumch:
@@ -101,6 +98,11 @@ else:
                         else:
                             n = note - min_note
                         if n >= 0 and n <= 127:
+                            while curtime < t:
+                                dt = min(63, t-curtime)
+                                curtime += dt
+                                if nnotes > 0:
+                                    output.append(dt+128)
                             output.append(n)
                             nnotes += 1
                             nvoices += 1
