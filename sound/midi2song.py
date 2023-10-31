@@ -57,6 +57,10 @@ def note2drum(n):
         return 0x43 # tom
     if n in [46,49,52,53,55,57]:
         return 0x44 # crash
+    if n in [60,65,57,56,76]:
+        return 0x45 # hi cowbell
+    if n in [61,66,68,77]:
+        return 0x46 # lo cowbell
     return -1
 
 if not args.midichannels:
