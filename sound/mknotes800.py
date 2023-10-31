@@ -33,15 +33,15 @@ for a440 in range(4200,4600):
     error = 0
     for note in range(4,test_notes):
         notehz = a440 / 10.0 * math.pow(2.0, (note - 49) / 12.0);
-        period = round(basehz / notehz)
+        period = round(basehz * s / notehz) / s
         tonehz = basehz / period
         if period < s or period > 32*s:
             tonehz = -10000
-        period2 = round(basehz2 / notehz)
+        period2 = round(basehz2 * s / notehz) / s
         tonehz2 = basehz2 / period
         if period2 < s or period2 > 32*s:
             tonehz2 = -10000
-        period3 = round(basehz3 / notehz)
+        period3 = round(basehz3 * s / notehz) / s
         tonehz3 = basehz3 / period
         if period3 < s or period3 > 32*s:
             tonehz3 = -10000

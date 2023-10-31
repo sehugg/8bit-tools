@@ -5,34 +5,29 @@ import mido
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--start', type=int, default=21, help="first MIDI note")
-parser.add_argument('-n', '--num', type=int, default=21+63, help="number of notes")
+parser.add_argument('-n', '--num', type=int, default=64, help="number of notes")
 parser.add_argument('-v', '--voices', type=int, default=3, help="number of voices")
 parser.add_argument('-T', '--transpose', type=int, default=0, help="transpose by half-steps")
 parser.add_argument('-t', '--tempo', type=int, default=48, help="tempo")
 parser.add_argument('-o', '--one', action="store_true", help="one voice per channel")
-parser.add_argument('-z', '--compress', action="store_true", help="compress song (experimental)")
 parser.add_argument('-H', '--hex', action="store_true", help="hex output")
 parser.add_argument('-A', '--asm', action="store_true", help="asm output")
+parser.add_argument('-L', '--locpu', action="store_true", help="one command per frame")
+parser.add_argument('-D', '--drums', type=int, default=-1, help="drum channel")
 parser.add_argument('midifile', help="MIDI file")
 parser.add_argument('midichannels', nargs='?', help="comma-separated list of MIDI channels, or -")
 args = parser.parse_args()
 
 min_note = args.start
-max_note = min_note + args.num
+max_note = min_note + args.num - 1
 max_voices = args.voices
 one_voice_per_channel = args.one
 tempo = args.tempo
-compress = args.compress
 transpose = args.transpose
 coutput = not args.hex
 asmoutput = args.asm
-
-# for 2600
-#max_voices = 2
-#coutput = 0
-# for 2600 wavetable
-#max_voices = 4
-#one_voice_per_channel = 0
+locpu = args.locpu
+drumch = args.drums
 
 fn = args.midifile
 
@@ -43,67 +38,8 @@ def hex1(n):
 def hex2(n):
     return '0x%02x'%n
 
-def only_notes(s):
-    for ch in s:
-        if ord(ch) == 0xff:
-            return False
-    return True
-
-def find_common_substrings(s):
-    results = {}
-    for l in range(64, 6, -1):
-        for i in range(0,len(s)-l*2):
-            match = s[i:i+l]
-            if not only_notes(match):
-                continue
-            count = 0
-            j = i+l
-            while j < len(s):
-                p = s.find(match, j)
-                if p > 0:
-                    count += 1
-                    j = p+l
-                else:
-                    break
-            if count:
-                n = count*(l-1)-1
-                if not results.get(i) or n > results[i][0]:
-                    results[i] = (n,l)
-    return results
-
-def get_best_substring(ss):
-    best = (0,0,0)
-    for k,v in list(ss.items()):
-      if v[0] > best[2]:
-          best = (k,v[1],v[0])
-    return best
-
-def offset2str(ofs):
-    return chr(ofs & 0xff) + chr((ofs >> 8) & 0xff)
-    #return chr(0xc0 | (ofs & 0x3f)) + chr(0xc0 | ((ofs >> 6) & 0x3f))
-
 g_code = 0xc1
 g_subs = []
-
-def replace_substrings(s, bss):
-    global g_code
-    i,l,n = bss
-    count = (n+1)/(l-1)
-    match = s[i:i+l]
-    print((i,l,n,count,repr(match)))
-    r = s[0:i]
-    while i<len(s):
-        r += chr(g_code)
-        p = s.find(match,i+l)
-        if p < 0:
-            p = len(s)
-        r += s[i+l:p]
-        i = p
-    g_subs.append(match + chr(0xff))
-    g_code += 1
-    print((len(s), len(r)+n+l))
-    assert len(s) == len(r)+n+l
-    return r
 
 def channels_for_track(track):
     channels = set()
@@ -111,6 +47,17 @@ def channels_for_track(track):
         if msg.type == 'note_on':
             channels.add(msg.channel)
     return list(channels)
+    
+def note2drum(n):
+    if n in [35,36,41]:
+        return 0x41 # bass drum
+    if n in [37,38,39,40]:
+        return 0x42 # snare
+    if n in [43,45,47,48]:
+        return 0x43 # tom
+    if n in [46,49,52,53,55,57]:
+        return 0x44 # crash
+    return -1
 
 if not args.midichannels:
     #print(mid)
@@ -145,11 +92,17 @@ else:
                         output.append(dt+128)
                 if note >= min_note and note <= max_note and nvoices < max_voices:
                     if not (one_voice_per_channel and (curchans & (1<<msg.channel))):
-                        n = note - min_note
-                        output.append(n)
-                        nnotes += 1
-                        nvoices += 1
-                        curchans |= 1<<msg.channel
+                        if msg.channel == drumch:
+                            n = note2drum(note)
+                        else:
+                            n = note - min_note
+                        if n >= 0 and n <= 127:
+                            output.append(n)
+                            nnotes += 1
+                            nvoices += 1
+                            curchans |= 1<<msg.channel
+                            if locpu:
+                              curtime += 1
     output.append(0xff)
     if asmoutput:
         print((','.join(['$'+hex1(x) for x in output])))
@@ -159,28 +112,3 @@ else:
         bighex = ''.join([hex1(x) for x in output])
         for i in range(0,len(bighex)+32,32):
             print(('\thex', bighex[i:i+32]))
-    if compress:
-        # replace common substrings
-        bout = ''.join(chr(i) for i in output)
-        for iter in range(0,32):
-          ss = find_common_substrings(bout)
-          bss = get_best_substring(ss)
-          print(bss)
-          if bss[1] == 0:
-              break
-          bout = replace_substrings(bout, bss)
-          print((repr(bout)))
-        # build substring table
-        ofs = (len(g_subs)+1)*2
-        zout = offset2str(ofs)
-        ofs += len(bout)
-        for ss in g_subs:
-            ofs += len(ss)
-            zout += offset2str(ofs)
-        # output strings
-        zout += bout
-        for ss in g_subs:
-            zout += ss
-        # print output
-        print((','.join([hex2(ord(x)) for x in zout])))
-        print(("// compressed %d -> %d bytes" % (len(output), len(zout))))

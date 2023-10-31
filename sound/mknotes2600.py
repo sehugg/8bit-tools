@@ -74,7 +74,7 @@ for note in range(0,final_notes):
             
     #print(note, besthz, bestperiod, notehz)
     print('%d,' % period, end='')
-    periods.append(bestperiod / s - 1)
+    periods.append(round(bestperiod / s) - 1)
     bits.append(bittable[bestperiod & (s-1)])
     if besthz==basehz:
         tones.append(4)
