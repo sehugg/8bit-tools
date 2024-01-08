@@ -104,13 +104,13 @@ for arr in [output]:
         for i in range(0,len(output),height):
             print('.DB', ','.join(list(map(tohex2,arr[i:i+height]))), ';%d'%(i/height+lochar))
     if args.carray:
-        print("static char FONT[%d][%d] = {" % (hichar-lochar+1, height))
+        print("const char FONT[%d][%d] = {" % (hichar-lochar+1, height))
         for i in range(0,len(output),height):
             print('{', ','.join(list(map(tohex2,arr[i:i+height]))), '},', end=' ')
         print()
         print("};")
     if args.flatcarray:
-        print("static char FONT[%d] = {" % ((hichar-lochar+1) * height))
+        print("const char FONT[%d] = {" % ((hichar-lochar+1) * height))
         print(','.join(list(map(tohex2,arr))))
         print("}");
     if args.verilog:
