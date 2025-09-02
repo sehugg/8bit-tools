@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys, struct
+
+if len(sys.argv) != 2:
+    print("Usage: p4_to_pfbytes.py <pbm_file>", file=sys.stderr)
+    print("Convert PBM file to Atari VCS playfield bytes", file=sys.stderr)
+    sys.exit(1)
 
 # playfield bytes, one array for each of 6 columns
 output = [[],[],[],[],[],[]]

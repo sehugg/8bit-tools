@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
+
+if len(sys.argv) != 2:
+    print("Usage: bin2arr.py <binary_file>", file=sys.stderr)
+    print("Convert binary file to C array", file=sys.stderr)
+    sys.exit(1)
 
 out = sys.stdout
 chr = open(sys.argv[1],'rb').read()

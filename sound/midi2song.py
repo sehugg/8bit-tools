@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys, string, math, argparse
 import mido
@@ -78,7 +78,7 @@ else:
     nvoices = 0
     curchans = 0
     channels = [int(x) for x in args.midichannels.split(',')]
-    print ('')
+    print('')
     #print(("// %s %s" % (mid, channels)))
     output = []
     for msg in mid:

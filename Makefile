@@ -1,16 +1,33 @@
 
+.PHONY: all binaries clean
+
 all: binaries
 
 %.lzg: %
 	lzg -9 $< $@
 
-binaries: scr2floyd scr2floyd_percept galois
+binaries: scr2floyd scr2floyd_percept galois raw8to4
 
-%-pf.hex: %-pf.pbm p4_to_pfbytes.py
-	python p4_to_pfbytes.py $< > $@
+scr2floyd: tms9918a/scr2floyd.c
+	gcc -o $@ $<
 
-%-48.hex: %-48.pbm p4_to_48pix.py
-	python p4_to_48pix.py $< > $@
+scr2floyd_percept: tms9918a/scr2floyd_percept.c
+	gcc -o $@ $<
+
+galois: lfsr/galois.c
+	gcc -o $@ $<
+
+raw8to4: sound/raw8to4.c
+	gcc -o $@ $<
+
+clean:
+	rm -f scr2floyd scr2floyd_percept galois raw8to4 *.o *.s
+
+%-pf.hex: %-pf.pbm vcs/p4_to_pfbytes.py
+	python3 vcs/p4_to_pfbytes.py $< > $@
+
+%-48.hex: %-48.pbm vcs/p4_to_48pix.py
+	python3 vcs/p4_to_48pix.py $< > $@
 
 %-pf.pbm: %.jpg
 	convert $< -resize 40x192\! -colorspace Gray -dither FloydSteinberg $@
@@ -49,5 +66,5 @@ baddies-horiz.rot.pbm: baddies-horiz.png
 	convert $< +dither -brightness-contrast 50x50 -fill black -transpose -negate $@
 	convert $@ foo.png
 
-lfsr.out: lfsrcalc.py
-	pypy lfsrcalc.py | sort -n > lfsr.out 
+lfsr.out: lfsr/lfsrcalc.py
+	cd lfsr && python3 lfsrcalc.py | sort -n > ../lfsr.out 

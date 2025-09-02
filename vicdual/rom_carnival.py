@@ -1,6 +1,11 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys, zipfile
+
+if len(sys.argv) != 2:
+    print("Usage: rom_carnival.py <rom_file>", file=sys.stderr)
+    print("Split ROM file into carnival arcade ROM set", file=sys.stderr)
+    sys.exit(1)
 
 OUTFILE = 'carnival.zip'
 
@@ -37,7 +42,7 @@ with zipfile.ZipFile(OUTFILE, 'w') as zipf:
                 romdata = data[start:start+length]
                 if len(romdata) != length:
                         print("*** No data for %s (offset 0x%x)" % (name,start))
-                        romdata = '\0' * length
+                        romdata = b'\0' * length
                         zipf.writestr(name, romdata)
                 else:
                         zipf.writestr(name, romdata)

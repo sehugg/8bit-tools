@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 PhonemeDurations = [
 59,71,121,47,47,71,103,90,71,55,80,121,103,
@@ -94,7 +94,7 @@ def phonemes_to_codes(s):
     if code < 0 or len(ph) > len(PhonemeTable[code]):
      code = j
   if code < 0:
-   raise "Invalid phoneme %s" % s
+   raise Exception("Invalid phoneme %s" % s)
   s = s[len(PhonemeTable[code]):]
   codes.append(code)
  return codes
@@ -114,8 +114,8 @@ def codes2key(codes):
  return ''.join([chr(c) for c in codes])
 
 def add_fragment(codes, t0, t1, t2, offset, wavlen):
- o1 = offset + t0*wavlen/t2
- o2 = offset + t1*wavlen/t2
+ o1 = offset + t0*wavlen//t2
+ o2 = offset + t1*wavlen//t2
  #print codes, t0, t1, t2, offset, wavlen, o1, o2
  allmaps[codes2key(codes)] = (o1,o2)
 
@@ -125,7 +125,7 @@ def extract_fragments(fn, codes, times):
   wav = f.read()[0x2c:]
   start = len(allwavs)
   allwavs += wav
-  print fn,len(wav),codes,times
+  print(fn,len(wav),codes,times)
   add_fragment([63] + codes + [63], times[0], times[-1], times[-1], start, len(wav))
   for i in range(1,len(codes)+1):
    add_fragment([63] + codes[0:i], times[0], times[i], times[-1], start, len(wav))
@@ -173,11 +173,11 @@ extract_fragments_from_lists(GorfWordTable, GorfSampleFiles)
 
 #mycodes = phonemes_to_codes('FUHKYIUU1U1AH1SHO1L')
 mycodes = phonemes_to_codes('GO2TOO1BEH1D')
-print mycodes
+print(mycodes)
 fraglist = concat_speech(codes2key([63] + mycodes + [63]))
-print fraglist
+print(fraglist)
 
 outraw = fraglist_to_raw(fraglist)
-print len(outraw)
+print(len(outraw))
 with open('out.u8','wb') as outf:
  outf.write(outraw)

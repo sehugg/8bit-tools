@@ -1,8 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # converter for Apple ][ Delta Modulation Sample Playback
 # ?platform=apple2&file=deltamod.dasm
 
 import sys
+
+if len(sys.argv) != 3:
+    print("Usage: wav2amc.py <wav_file> <dac_values>", file=sys.stderr)
+    print("Convert WAV to Apple ][ Delta Modulation format", file=sys.stderr)
+    sys.exit(1)
 
 dacvals = int(sys.argv[2])
 step = 1.0/dacvals
@@ -36,5 +41,5 @@ for i in range(0,len(bits)):
          bytearr.append(x)
          x = 0
 
-with open('%s%d.bin' % (sys.argv[1], dacvals),'w') as outf:
+with open('%s%d.bin' % (sys.argv[1], dacvals),'wb') as outf:
   outf.write(bytearray(bytearr))

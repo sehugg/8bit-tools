@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys, zipfile
+
+if len(sys.argv) != 2:
+    print("Usage: rom_scramble.py <rom_file>", file=sys.stderr)
+    print("Split ROM file into scramble arcade ROM set", file=sys.stderr)
+    sys.exit(1)
 
 OUTFILE = 'scramble.zip'
 
@@ -27,17 +32,17 @@ ROMS = [
 fn = sys.argv[1]
 with open(fn, 'rb') as f:
         data = f.read()
-        print "Read %d bytes of %s" % (len(data), fn)
+        print("Read %d bytes of %s" % (len(data), fn))
 
 with zipfile.ZipFile(OUTFILE, 'w') as zipf:
         for name,start,length in ROMS:
                 romdata = data[start:start+length]
                 if len(romdata) != length:
-                        print "*** No data for %s (offset 0x%x)" % (name,start)
-                        romdata = '\0' * length
+                        print("*** No data for %s (offset 0x%x)" % (name,start))
+                        romdata = b'\0' * length
                         zipf.writestr(name, romdata)
                 else:
-                        print 'Wrote %s (%d bytes)' % (name, length)
+                        print('Wrote %s (%d bytes)' % (name, length))
                         zipf.writestr(name, romdata)
 
         

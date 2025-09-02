@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys,string
+
+if len(sys.argv) != 2:
+    print("Usage: parsebdf3x5.py <bdf_file>", file=sys.stderr)
+    print("Parse BDF font file to 3x5 format", file=sys.stderr)
+    sys.exit(1)
 
 height = 5
 lochar = 41

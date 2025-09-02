@@ -66,6 +66,7 @@ Legal disclaimer
 #include<time.h>
 #include<limits.h>
 #include<stdlib.h>
+#include<string.h>
 
 typedef unsigned int    uint;
 typedef unsigned char   uchar;

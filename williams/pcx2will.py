@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys, array, string
+
+if len(sys.argv) != 2:
+    print("Usage: pcx2will.py <pcx_file>", file=sys.stderr)
+    print("Convert PCX file to Williams arcade sprite format", file=sys.stderr)
+    sys.exit(1)
 
 col0 = 0
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # Import a library of functions called 'pygame'
 import pygame
@@ -62,8 +62,8 @@ while not done:
     for y in range(y0,240):
         i = y-y0
         rw = i*2
-        cw = rw/4
-        lw = rw/32
+        cw = rw//4
+        lw = rw//32
         z = 500.0/(i+1)
         curbcol = CURBING[int(z) % 2]
         cencol = CENLINE[int(z) % 2]
@@ -74,8 +74,8 @@ while not done:
         pygame.draw.line(screen, BLACK, [x0-rw, y], [x0+rw, y], 1)
         pygame.draw.line(screen, curbcol, [x0-rw-cw, y], [x0-rw, y], 1)
         pygame.draw.line(screen, curbcol, [x0+rw, y], [x0+rw+cw, y], 1)
-        pygame.draw.line(screen, cencol, [x0-rw/3-lw, y], [x0-rw/3+lw, y], 1)
-        pygame.draw.line(screen, cencol, [x0+rw/3-lw, y], [x0+rw/3+lw, y], 1)
+        pygame.draw.line(screen, cencol, [x0-rw//3-lw, y], [x0-rw//3+lw, y], 1)
+        pygame.draw.line(screen, cencol, [x0+rw//3-lw, y], [x0+rw//3+lw, y], 1)
         
     # draw mountains
     h1 = 1

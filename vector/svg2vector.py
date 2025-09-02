@@ -1,7 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
 from xml.dom import minidom
+
+if len(sys.argv) != 2:
+    print("Usage: svg2vector.py <svg_file>", file=sys.stderr)
+    print("Convert SVG file to vector display format", file=sys.stderr)
+    sys.exit(1)
 
 def textToFloat(name):
         if name:

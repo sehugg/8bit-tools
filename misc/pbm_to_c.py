@@ -1,6 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
+
+if len(sys.argv) != 2:
+    print("Usage: pbm_to_c.py <pbm_file>", file=sys.stderr)
+    print("Convert PBM file to C array format", file=sys.stderr)
+    sys.exit(1)
 
 # reverse byte
 def rev(n):
@@ -20,18 +25,18 @@ def out(i, pix, lb, hb, reverse=0, shift=0):
 with open(sys.argv[1],'rb') as f:
     # read PBM header
     header = f.readline().strip()
-    assert(header == 'P4')
+    assert(header == b'P4')
     dims = f.readline().strip()
     while dims[0] == '#':
         dims = f.readline().strip()
     width,height = map(int, dims.split())
-    wbytes = (width+7)/8
+    wbytes = (width+7)//8
     data = f.read()
     print("{%d,%d," % (wbytes,height), end='')
     for i in range(0,len(data)):
         if i>0:
             sys.stdout.write(",")
         ofs = i+wbytes-(i%wbytes)*2-1
-        sys.stdout.write( "0x%02x" % ord(data[ofs]) )
+        sys.stdout.write( "0x%02x" % data[ofs] )
     print("}")
 
