@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 
-import sys, string, math, argparse
+import sys, string, math, argparse, statistics
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-l', '--length', type=int, default=64, help="length of note table")
 parser.add_argument('-u', '--upper', type=int, default=49, help="upper note # to test")
+parser.add_argument('-m', '--metric', choices=['sum', 'avg', 'median', 'max'],
+                    default='sum', help="error metric used to rank A440 candidates")
 args = parser.parse_args()
+
+def aggregate(errors, metric):
+    if not errors:
+        return 0
+    if metric == 'sum':
+        return sum(errors)
+    if metric == 'avg':
+        return sum(errors) / len(errors)
+    if metric == 'median':
+        return statistics.median(errors)
+    if metric == 'max':
+        return max(errors)
+    raise ValueError(metric)
 
 test_notes = args.upper
 final_notes = args.length
@@ -30,7 +45,7 @@ bittable = [
 results = []
 
 for a440 in range(4200,4600):
-    error = 0
+    errors = []
     for note in range(4,test_notes):
         notehz = a440 / 10.0 * math.pow(2.0, (note - 49) / 12.0);
         period = round(basehz * s / notehz) / s
@@ -45,13 +60,13 @@ for a440 in range(4200,4600):
         tonehz3 = basehz3 / period
         if period3 < s or period3 > 32*s:
             tonehz3 = -10000
-        error += min(abs(notehz-tonehz), abs(notehz-tonehz2), abs(notehz-tonehz3))
-    results.append((error, a440))
+        errors.append(min(abs(notehz-tonehz), abs(notehz-tonehz2), abs(notehz-tonehz3)))
+    results.append((aggregate(errors, args.metric), a440))
 
 results.sort()
 best_error, best_a440 = results[0]
 best_a440 /= 10.0
-print('//', best_a440, best_error, test_notes)
+print('//', best_a440, best_error, test_notes, args.metric)
 
 periods = []
 tones = []
@@ -66,8 +81,8 @@ for note in range(0,final_notes):
     for hz in [basehz, basehz2, basehz3]:
         period = int(round(hz * s / notehz))
         if period >= s and period <= 256*s:
-            tonehz = hz / period
-            error = notehz - hz
+            tonehz = hz * s / period
+            error = abs(notehz - tonehz)
             #print(hz,tonehz,period,error)
             if error < bestscore:
                 bestscore = error
@@ -75,7 +90,7 @@ for note in range(0,final_notes):
                 besthz = hz
             
     #print(note, besthz, bestperiod, notehz)
-    print('%d,' % period, end='')
+    print('%d,' % bestperiod, end='')
     periods.append(int(bestperiod / s - 1))
     bits.append(bittable[bestperiod & (s-1)])
     if besthz==basehz:
