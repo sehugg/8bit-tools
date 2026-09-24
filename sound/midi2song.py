@@ -13,6 +13,7 @@ parser.add_argument('-o', '--one', action="store_true", help="one voice per chan
 parser.add_argument('-H', '--hex', action="store_true", help="hex output")
 parser.add_argument('-A', '--asm', action="store_true", help="asm output")
 parser.add_argument('-L', '--locpu', action="store_true", help="one command per frame")
+parser.add_argument('-C', '--compress', action="store_true", help="compress output with 0xfe back-references")
 parser.add_argument('-D', '--drums', type=int, default=-1, help="drum channel")
 parser.add_argument('midifile', help="MIDI file")
 parser.add_argument('midichannels', nargs='?', help="comma-separated list of MIDI channels, or -")
@@ -37,6 +38,63 @@ def hex1(n):
     return '%02x'%n
 def hex2(n):
     return '0x%02x'%n
+
+def compress_song(data):
+    # Emit short back-references: 0xfe <offset> <length>
+    #   offset = bytes to step back from the 0xfe opcode
+    #   length = number of bytes copied from there
+    # Referenced runs are always literal (never another reference), so a
+    # one-level decoder that just moves its read pointer back and replays
+    # them works without a decompression buffer.
+    out = bytearray()
+    refbyte = []  # True if this output byte is part of a 0xfe instruction
+    pos = 0
+    n = len(data)
+    while pos < n:
+        opos = len(out)
+        best_len = 0
+        best_off = 0
+        max_off = min(255, opos)
+        max_len = min(255, n - pos)
+        for off in range(1, max_off + 1):
+            src = opos - off
+            l = 0
+            # l < off keeps the match from overlapping the current position
+            while l < max_len and l < off:
+                if refbyte[src + l] or out[src + l] != data[pos + l]:
+                    break
+                l += 1
+            if l > best_len:
+                best_len = l
+                best_off = off
+                if l == max_len:
+                    break
+        if best_len >= 4:  # 3-byte instruction must save at least a byte
+            out += bytes([0xfe, best_off, best_len])
+            refbyte += [True, True, True]
+            pos += best_len
+        else:
+            out.append(data[pos])
+            refbyte.append(False)
+            pos += 1
+    return out
+
+def decompress_song(buf):
+    res = bytearray()
+    p = 0
+    while p < len(buf):
+        b = buf[p]
+        if b == 0xfe:
+            off = buf[p + 1]
+            ln = buf[p + 2]
+            src = p - off
+            for i in range(ln):
+                res.append(buf[src + i])
+            p += 3
+        else:
+            res.append(b)
+            p += 1
+    return bytes(res)
 
 g_code = 0xc1
 g_subs = []
@@ -109,6 +167,10 @@ else:
                             curchans |= 1<<msg.channel
                             if locpu:
                               curtime += 1
+    if args.compress:
+        packed = compress_song(output)
+        assert decompress_song(packed) == bytes(output), 'compression bug'
+        output = list(packed)
     output.append(0xff)
     if asmoutput:
         print((','.join(['$'+hex1(x) for x in output])))
